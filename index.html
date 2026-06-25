@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kash Analytics — Insights & Resolution Calibration</title>
+<style>
+  :root{--bg:#0b0b0c;--panel:#161618;--panel2:#1d1d20;--border:#2a2a2e;--txt:#f4f4f5;
+    --muted:#9a9aa2;--accent:#ffe600;--accent2:#ffd400;--yes:#46e08a;--no:#ff5d6c;--chip:#26262b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#15150f 0%,var(--bg) 55%);
+    color:var(--txt);font:15px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .brand{display:flex;align-items:baseline;gap:10px}.brand .logo{font-weight:800;font-size:30px;letter-spacing:-1px;color:var(--accent)}
+  .brand .sub{color:var(--muted);font-size:14px}
+  .actions{display:flex;align-items:center;gap:10px}
+  .btn{background:var(--accent);color:#000;font-weight:700;border:0;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:14px}.btn:hover{background:var(--accent2)}
+  .updated{color:var(--muted);font-size:12.5px}
+  .tabs{display:flex;gap:8px;margin:6px 0 18px;border-bottom:1px solid var(--border)}
+  .tab{padding:10px 14px;cursor:pointer;color:var(--muted);font-weight:700;font-size:14px;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab.on{color:var(--accent);border-color:var(--accent)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 20px}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+  .stat .k{color:var(--muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.5px}
+  .stat .v{font-size:23px;font-weight:800;margin-top:4px}
+  h2{font-size:13px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:22px 0 12px;font-weight:700}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:13px}@media(max-width:720px){.two{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
+  .minibar{height:7px;background:#26262b;border-radius:999px;overflow:hidden;margin-top:3px}
+  .minibar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+  .flag{color:var(--no);font-weight:700} .ok{color:var(--yes);font-weight:700}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  input,select{background:var(--panel2);color:var(--txt);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:14px;outline:none}
+  input{flex:1;min-width:200px}input:focus,select:focus{border-color:var(--accent)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:13px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:15px;display:flex;flex-direction:column;gap:11px}
+  .card:hover{border-color:#3b3b42}.card .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--muted);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+  .q{font-weight:600;font-size:15px;line-height:1.35;min-height:40px}
+  .barwrap{display:flex;align-items:center;gap:9px}.bar{flex:1;height:8px;background:#26262b;border-radius:999px;overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+  .prob{font-weight:800;font-size:14px;min-width:46px;text-align:right}.multi{color:var(--muted);font-size:13px;font-weight:600}
+  .meta{display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px;border-top:1px solid var(--border);padding-top:10px}.meta b{color:var(--txt)}
+  .msg{padding:34px;text-align:center;color:var(--muted);line-height:1.6}
+  .calrow{display:grid;grid-template-columns:90px 1fr 1fr 60px;gap:8px;align-items:center;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border)}
+  .calbar{height:18px;border-radius:5px;background:#26262b;position:relative;overflow:hidden}
+  .calbar>i{position:absolute;left:0;top:0;bottom:0}
+  .note{color:var(--muted);font-size:12.5px;line-height:1.6;margin-top:10px}
+  .foot{margin-top:34px;color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
+  .hi{color:var(--accent)}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:9px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .prog{height:6px;background:#26262b;border-radius:999px;overflow:hidden;margin:12px auto 0;max-width:320px}.prog>i{display:block;height:100%;background:var(--accent);transition:width .15s}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="logo">kash</span><span class="sub">· analytics</span></div>
+    <div class="actions"><span class="updated" id="updated">loading…</span><button class="btn" id="reload">↻ Reload</button></div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab on" data-t="reality">⚡ Reality Check</div>
+    <div class="tab" data-t="insights">Insights</div>
+    <div class="tab" data-t="calib">Resolution Calibration</div>
+    <div class="tab" data-t="consistency">🎯 Consistency</div>
+    <div class="tab" data-t="markets">Markets</div>
+  </div>
+
+  <!-- REALITY CHECK (flagship) -->
+  <section id="t-reality">
+    <div class="panel" style="border-color:#3a3a1f">
+      <h2 style="margin-top:0">Reported volume vs <span class="hi">real money</span> actually traded</h2>
+      <div id="realBanner"><div class="msg">Sampling each market's real on-chain USDC trades (in your browser)…</div></div>
+      <div class="note">Kash markets advertise a headline <code>totalVolume</code>. We cross-check it against the activity the same API reports — <code>uniqueTraders</code>, <code>tradeCount</code>, <code>volume24h</code>, <code>socialMentions</code>, <code>commentCount</code> — to expose volume that isn't backed by real trading. None of these ratios are shown in the native app.</div>
+    </div>
+    <div class="two" style="margin-top:13px">
+      <div class="panel"><h2 style="margin-top:0">Inflation leaderboard (sorted by $ per trader)</h2><div id="realTable"><div class="msg">…</div></div></div>
+      <div class="panel"><h2 style="margin-top:0">Reality flags</h2><div id="realFeed"><div class="msg">…</div></div></div>
+    </div>
+    <button class="btn" id="runReal" style="margin-top:14px">↻ Re-run reality check</button>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section id="t-insights" style="display:none">
+    <div class="stats" id="stats"></div>
+    <div class="two">
+      <div class="panel"><h2 style="margin-top:0">Volume & engagement by category</h2><div id="catTable"></div></div>
+      <div class="panel"><h2 style="margin-top:0">Engagement quality</h2><div id="engage"></div></div>
+    </div>
+    <div class="two" style="margin-top:13px">
+      <div class="panel"><h2 style="margin-top:0">Top by REAL activity (trades)</h2><div id="byTrades"></div></div>
+      <div class="panel"><h2 style="margin-top:0">Top by volume</h2><div id="byVol"></div></div>
+    </div>
+  </section>
+
+  <!-- CALIBRATION -->
+  <section id="t-calib" style="display:none">
+    <div class="panel">
+      <h2 style="margin-top:0">Is Kash's pricing calibrated? (predicted % vs actual outcome)</h2>
+      <div id="calib"><div class="msg">Click "Run calibration" — it samples resolved markets + price history (in your browser).</div></div>
+      <button class="btn" id="runCal" style="margin-top:12px">Run calibration</button>
+      <div class="note">Tests the core trustless-resolution claim: do markets that traded at ~70% actually resolve YES ~70% of the time?
+        Brier score: lower = better calibrated (0 = perfect, 0.25 = coin-flip). Needs enough resolved markets with price history.</div>
+    </div>
+  </section>
+
+  <!-- CONSISTENCY (multi-outcome arb radar) -->
+  <section id="t-consistency" style="display:none">
+    <div class="panel">
+      <h2 style="margin-top:0">Do multi-outcome markets add up to 100%?</h2>
+      <div id="consBanner"><div class="msg">Click "Scan" — fetches each multi-outcome market and sums its outcome probabilities (in your browser).</div></div>
+      <button class="btn" id="runCons" style="margin-top:12px">Scan multi-outcome markets</button>
+      <div class="note">A market's mutually-exclusive outcomes should sum to <b>100%</b>. <b class="flag">&gt;100%</b> = overround — a built-in house edge (don't buy the field). <b class="ok">&lt;100%</b> = underround — a theoretical buy-every-outcome arb, but only real if the gap beats <b>2% fee × number of outcomes</b> + slippage. This is the one view here that surfaces a tradable signal, not just a transparency flag.</div>
+    </div>
+    <div class="panel" style="margin-top:13px"><div id="consTable"></div></div>
+  </section>
+
+  <!-- MARKETS -->
+  <section id="t-markets" style="display:none">
+    <div class="controls">
+      <input id="search" placeholder="Search markets…" />
+      <select id="cat"><option value="">All categories</option></select>
+      <select id="sort"><option value="vol">Sort: Volume</option><option value="trades">Sort: Trades</option><option value="prob">Sort: Probability</option><option value="end">Sort: Ending soon</option></select>
+    </div>
+    <div class="grid" id="grid"><div class="msg">Loading…</div></div>
+  </section>
+
+  <div class="foot">Community analytics · live data from the public Kash API (<code>app.kash.bot/api</code>) · not affiliated with Kash.<br/>
+    Unique vs the native app: <b>reported-vs-real-volume reality check</b>, engagement-quality, and resolution calibration — not just a market list.</div>
+</div>
+
+<script>
+const API="https://app.kash.bot/api";
+const CHIP={crypto:"#f7931a",sports:"#46e08a","world-cup":"#46e08a","ai poker":"#b388ff",politics:"#ff8a5b",finance:"#5bd1ff",culture:"#ff7ad9",tech:"#7af0ff"};
+let M=[];
+const num=x=>{const v=+x;return isFinite(v)?v:0};
+const usd=c=>{c=num(c)/100;if(c>=1e6)return"$"+(c/1e6).toFixed(1)+"M";if(c>=1e3)return"$"+(c/1e3).toFixed(0)+"k";return"$"+c.toFixed(0)};
+function prob(m){for(const k of["probability","yesPrice","yes_price","current_probability"]){const v=+m[k];if(v>0&&v<1)return v}return 0}
+function hrs(m){return m.endTime?(m.endTime/1000-Date.now()/1000)/3600:null}
+function tstr(m){const h=hrs(m);if(h===null)return"—";if(h<0)return"ended";if(h<1)return Math.round(h*60)+"m";if(h<48)return h.toFixed(0)+"h";return Math.round(h/24)+"d"}
+function chip(c){const k=(c||"other").toLowerCase();return `<span class="chip" style="color:${CHIP[k]||"#9a9aa2"}">${c||"other"}</span>`}
+async function J(u){const r=await fetch(u,{headers:{accept:"application/json"}});if(!r.ok)throw new Error(r.status);return r.json()}
+
+async function loadAll(){
+  document.getElementById("grid").innerHTML='<div class="msg">Loading…</div>';
+  const rb=document.getElementById("realBanner");if(rb)rb.innerHTML='<div class="msg"><span class="spin"></span>Loading markets from the Kash API…</div>';
+  try{
+    let all=[];for(let o=0;o<300;o+=100){const d=await J(`${API}/markets?status=active&sortBy=total_volume&sortOrder=desc&limit=100&offset=${o}`);
+      const ms=(d&&d.markets)||[];all=all.concat(ms);if(!(d&&d.pagination&&d.pagination.hasMore))break;}
+    M=all;buildCat();renderStats();renderInsights();renderMarkets();
+    document.getElementById("updated").textContent="updated "+new Date().toLocaleTimeString();
+  }catch(e){document.getElementById("stats").innerHTML=`<div class="msg" style="grid-column:1/-1">Couldn't load API (${e.message}). Host the file (Vercel/Pages) or run a local server — Kash API allows browser fetch from a hosted page.</div>`}
+}
+
+function renderStats(){
+  const n=M.length,vol=M.reduce((s,m)=>s+num(m.totalVolume),0),tr=M.reduce((s,m)=>s+num(m.tradeCount),0);
+  const soon=M.filter(m=>{const h=hrs(m);return h!==null&&h>0&&h<=24}).length;
+  document.getElementById("stats").innerHTML=[["Active markets",n],["Total volume",usd(vol)],["Total trades",tr.toLocaleString()],["Resolving <24h",soon]]
+    .map(([k,v])=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+}
+
+function renderInsights(){
+  // category aggregates
+  const by={};M.forEach(m=>{const c=m.category||"other";(by[c]=by[c]||{n:0,v:0,t:0});by[c].n++;by[c].v+=num(m.totalVolume);by[c].t+=num(m.tradeCount)});
+  const totV=Object.values(by).reduce((s,x)=>s+x.v,0)||1;
+  const cats=Object.entries(by).sort((a,b)=>b[1].v-a[1].v);
+  document.getElementById("catTable").innerHTML=`<table><tr><th>Category</th><th class="r">Mkts</th><th class="r">Volume</th><th class="r">% vol</th><th class="r">Avg $/trade</th></tr>`+
+    cats.map(([c,x])=>{const ats=x.t?(x.v/100/x.t):0;const flag=ats>5000;return `<tr><td>${chip(c)}</td><td class="r num">${x.n}</td><td class="r num">${usd(x.v)}</td>
+      <td class="r num">${(x.v/totV*100).toFixed(0)}%<div class="minibar"><i style="width:${(x.v/totV*100).toFixed(0)}%"></i></div></td>
+      <td class="r num ${flag?'flag':''}">$${ats>=1000?(ats/1000).toFixed(1)+'k':ats.toFixed(0)}</td></tr>`}).join("")+`</table>`;
+
+  // engagement quality
+  const sV=[...M].sort((a,b)=>num(b.totalVolume)-num(a.totalVolume));
+  const top5=sV.slice(0,5).reduce((s,m)=>s+num(m.totalVolume),0);
+  const conc=(top5/totV*100).toFixed(0);
+  const avgTrade=M.length?(M.reduce((s,m)=>s+num(m.totalVolume),0)/100)/(M.reduce((s,m)=>s+num(m.tradeCount),0)||1):0;
+  const lowTradeHiVol=sV.filter(m=>num(m.tradeCount)<25&&num(m.totalVolume)/100>5e5).length;
+  document.getElementById("engage").innerHTML=`
+    <table>
+      <tr><td>Top-5 markets = </td><td class="r"><b class="hi">${conc}%</b> of all volume</td></tr>
+      <tr><td>Avg trade size (platform)</td><td class="r"><b class="${avgTrade>5000?'flag':''}">$${avgTrade>=1000?(avgTrade/1000).toFixed(1)+'k':avgTrade.toFixed(0)}</b></td></tr>
+      <tr><td>Big-volume but &lt;25 trades</td><td class="r"><b class="${lowTradeHiVol?'flag':'ok'}">${lowTradeHiVol} markets</b></td></tr>
+    </table>
+    <div class="note">High avg trade size + few trades on big-volume markets = volume likely concentrated/inflated rather than broad retail flow. This view isn't in the native app.</div>`;
+
+  // top by trades vs top by volume
+  const li=(arr)=>`<table>`+arr.slice(0,8).map(m=>`<tr><td>${chip(m.category)}</td><td>${(m.question||"").slice(0,42).replace(/</g,"&lt;")}</td>
+    <td class="r num">${num(m.tradeCount)}t</td><td class="r num">${usd(m.totalVolume)}</td></tr>`).join("")+`</table>`;
+  document.getElementById("byTrades").innerHTML=li([...M].sort((a,b)=>num(b.tradeCount)-num(a.tradeCount)));
+  document.getElementById("byVol").innerHTML=li(sV);
+}
+
+// ---- Markets tab ----
+function buildCat(){const s=document.getElementById("cat"),cur=s.value;const cs=[...new Set(M.map(m=>m.category).filter(Boolean))].sort();
+  s.innerHTML='<option value="">All categories</option>'+cs.map(c=>`<option>${c}</option>`).join("");s.value=cur}
+function card(m){const p=prob(m),id=m.id;const ph=p>0?`<div class="barwrap"><div class="bar"><i style="width:${(p*100).toFixed(0)}%"></i></div><span class="prob">${(p*100).toFixed(0)}%</span></div>`:`<div class="multi">multi-outcome</div>`;
+  return `<a class="card" href="${id?`https://app.kash.bot/markets/${id}`:'https://app.kash.bot'}" target="_blank" rel="noopener">
+    <div class="top">${chip(m.category)}<span style="color:var(--muted);font-size:12px">⏱ ${tstr(m)}</span></div>
+    <div class="q">${(m.question||"").replace(/</g,"&lt;")}</div>${ph}
+    <div class="meta"><span>Vol <b>${usd(m.totalVolume)}</b></span><span><b>${num(m.tradeCount)}</b> trades</span><span style="color:var(--accent);font-weight:700">Open ↗</span></div></a>`}
+function renderMarkets(){const q=document.getElementById("search").value.toLowerCase(),cat=document.getElementById("cat").value,sort=document.getElementById("sort").value;
+  let l=M.filter(m=>(!cat||m.category===cat)&&(!q||(m.question||"").toLowerCase().includes(q)));
+  const cmp={vol:(a,b)=>num(b.totalVolume)-num(a.totalVolume),trades:(a,b)=>num(b.tradeCount)-num(a.tradeCount),prob:(a,b)=>prob(b)-prob(a),end:(a,b)=>(hrs(a)??1e9)-(hrs(b)??1e9)}[sort];
+  l.sort(cmp);document.getElementById("grid").innerHTML=l.length?l.map(card).join(""):'<div class="msg">No markets match.</div>'}
+
+// ---- Calibration tab (lazy) ----
+function histPrices(d){const m=d&&(d.market||d);const h=(m&&(m.priceHistory||m.price_history||m.history))||[];
+  return h.map(p=>{if(typeof p==="number")return p;return +(p.p??p.price??p.probability??p.value??NaN)}).filter(v=>v>0.02&&v<0.98)}
+async function runCalibration(){
+  const el=document.getElementById("calib");el.innerHTML='<div class="msg"><span class="spin"></span>Finding resolved markets…</div>';
+  try{
+    let res=[];
+    for(const st of ["resolved","all"]){
+      let acc=[];
+      for(let o=0;o<300;o+=100){const d=await J(`${API}/markets?status=${st}&sortBy=total_volume&sortOrder=desc&limit=100&offset=${o}`);
+        const ms=(d&&d.markets)||[];acc=acc.concat(ms);if(!(d&&d.pagination&&d.pagination.hasMore))break;await new Promise(r=>setTimeout(r,150));}
+      if(st==="all")acc=acc.filter(m=>String(m.status||"").toUpperCase()==="RESOLVED");
+      if(acc.length){res=acc;break}
+    }
+    if(!res.length){el.innerHTML='<div class="msg">No resolved markets yet (platform is young — the World Cup just kicked off and markets are still open).<br/>Calibration will populate once Kash starts resolving at scale. The live unique analytics today are in the <b>Insights</b> tab.</div>';return}
+    const pts=[];let used=0;const sample=res.slice(0,40);
+    for(let i=0;i<sample.length;i++){const m=sample[i];
+      el.innerHTML=`<div class="msg"><span class="spin"></span>Analyzing resolved markets… <b>${i+1}/${sample.length}</b><div class="prog"><i style="width:${Math.round((i+1)/sample.length*100)}%"></i></div></div>`;
+      const out = prob(m)>0.5?1:(prob(m)<0.5?0:null);  // resolved settle ~1/0
+      let outcome=out;
+      if(outcome===null){const f=+(m.outcome??m.winningOutcome??NaN);outcome=f===1?1:f===0?0:null}
+      let pred=null;
+      try{const det=await J(`${API}/markets/${m.id}?history=true`);const hp=histPrices(det);
+        if(hp.length){hp.sort((a,b)=>a-b);pred=hp[Math.floor(hp.length/2)]}}catch(e){}
+      await new Promise(r=>setTimeout(r,120));
+      if(pred!==null&&outcome!==null){pts.push([pred,outcome]);used++}
+    }
+    if(used<8){el.innerHTML=`<div class="msg">Only ${used} resolved markets had usable price history — too few for a calibration curve yet.<br/>This tab sharpens as the platform matures.</div>`;return}
+    const bins=[[0,.2],[.2,.4],[.4,.6],[.6,.8],[.8,1.01]];
+    const brier=pts.reduce((s,[p,o])=>s+(p-o)*(p-o),0)/pts.length;
+    let html=`<div class="note" style="margin:0 0 10px">n=${used} resolved markets · Brier <b class="hi">${brier.toFixed(3)}</b> (0=perfect, 0.25=coin-flip)</div>
+      <div class="calrow" style="font-weight:700;color:var(--muted);border:0"><span>Predicted</span><span>Actual YES rate</span><span>Bar</span><span class="r">n</span></div>`;
+    bins.forEach(([lo,hi])=>{const b=pts.filter(([p])=>p>=lo&&p<hi);if(!b.length)return;
+      const act=b.reduce((s,[,o])=>s+o,0)/b.length;const mid=(lo+hi)/2;
+      html+=`<div class="calrow"><span>${(lo*100)|0}–${(hi*100)|0}%</span>
+        <span>${(act*100).toFixed(0)}%</span>
+        <span class="calbar"><i style="width:${(act*100).toFixed(0)}%;background:linear-gradient(90deg,var(--accent2),var(--accent))"></i>
+        <i style="left:${(mid*100).toFixed(0)}%;width:2px;background:#fff"></i></span>
+        <span class="r num">${b.length}</span></div>`});
+    html+=`<div class="note">White tick = where a perfectly-calibrated market should land (predicted = actual). Bar = real outcome rate. Gap = miscalibration.</div>`;
+    el.innerHTML=html;
+  }catch(e){el.innerHTML=`<div class="msg">Couldn't compute (${e.message}).</div>`}
+}
+
+// ---- Reality Check tab (flagship): real USDC traded vs reported volume ----
+const fnum=x=>{const v=+x;return isFinite(v)?v:0};
+function tradeUsd(t){ // real USDC of one trade (6-decimal usdcIn/usdcOut), with fallbacks
+  const v=fnum(t.usdcIn)+fnum(t.usdcOut);
+  if(v>0)return v/1e6;
+  const a=fnum(t.usdc)||fnum(t.amountUsd)||fnum(t.value);
+  return a>1e4?a/1e6:a; // tolerate raw 6-dec or already-dollars
+}
+const money=v=>v>=1e6?"$"+(v/1e6).toFixed(2)+"M":v>=1e3?"$"+(v/1e3).toFixed(1)+"k":"$"+(+v).toFixed(0);
+async function fetchDetail(id){let det={};try{const d=await J(`${API}/markets/${id}?history=true`);det=(d&&d.market)||d||{};}catch(e){}return det;}
+let realRan=false;
+async function runReality(){
+  realRan=true;
+  const bn=document.getElementById("realBanner"),tb=document.getElementById("realTable"),fd=document.getElementById("realFeed");
+  tb.innerHTML='<div class="msg">…</div>';fd.innerHTML='<div class="msg">…</div>';
+  if(!M.length){bn.innerHTML='<div class="msg">No markets loaded.</div>';return}
+  const top=[...M].sort((a,b)=>num(b.totalVolume)-num(a.totalVolume)).slice(0,30);
+  const rows=[];
+  for(let i=0;i<top.length;i++){
+    const m=top[i];
+    bn.innerHTML=`<div class="msg"><span class="spin"></span>Sampling market activity… <b>${i+1}/${top.length}</b><div class="prog"><i style="width:${Math.round((i+1)/top.length*100)}%"></i></div></div>`;
+    const det=await fetchDetail(m.id);
+    rows.push({q:m.question||"",cat:m.category,
+      claimed:num(det.totalVolume??m.totalVolume)/100,
+      v24:num(det.volume24h)/100,
+      uniq:fnum(det.uniqueTraders||det.participantCount||0),
+      tc:fnum(det.tradeCount||m.tradeCount),
+      soc:fnum(det.socialMentions),com:fnum(det.commentCount)});
+    await new Promise(r=>setTimeout(r,90));
+  }
+  if(!rows.length){bn.innerHTML='<div class="msg">Couldn\'t read market details from the API right now.</div>';return}
+  const totClaim=rows.reduce((s,r)=>s+r.claimed,0),tot24=rows.reduce((s,r)=>s+r.v24,0),
+    totUniq=rows.reduce((s,r)=>s+r.uniq,0),totTc=rows.reduce((s,r)=>s+r.tc,0);
+  const perTrader=totUniq?totClaim/totUniq:0,perTrade=totTc?totClaim/totTc:0;
+  const worst=[...rows].filter(r=>r.uniq>0).sort((a,b)=>(b.claimed/b.uniq)-(a.claimed/a.uniq))[0];
+  bn.innerHTML=`
+    <div class="stats" style="margin:6px 0 4px">
+      <div class="stat"><div class="k">Reported volume (top 30)</div><div class="v">${money(totClaim)}</div></div>
+      <div class="stat"><div class="k">Volume last 24h</div><div class="v ${tot24<totClaim*0.01?'flag':'ok'}">${money(tot24)}</div></div>
+      <div class="stat"><div class="k">Reported $ / trader</div><div class="v flag">${money(perTrader)}</div></div>
+      <div class="stat"><div class="k">Reported $ / trade</div><div class="v flag">${money(perTrade)}</div></div>
+    </div>
+    ${worst?`<div class="note" style="margin-top:6px">Worst offender: <b>${worst.q.slice(0,64).replace(/</g,"&lt;")}</b> — reported <b class="flag">${money(worst.claimed)}</b> with only <b>${worst.uniq}</b> unique traders = <b class="flag">${money(worst.claimed/worst.uniq)}</b> per trader. Real retail doesn't trade six figures each.</div>`:""}`;
+  // leaderboard sorted by $/trader (most synthetic first)
+  const lb=[...rows].sort((a,b)=>(b.claimed/(b.uniq||1))-(a.claimed/(a.uniq||1)));
+  tb.innerHTML=`<table><tr><th>Market</th><th class="r">Reported</th><th class="r">24h</th><th class="r">$/trader</th><th class="r">Traders</th></tr>`+
+    lb.map(r=>`<tr><td>${chip(r.cat)} ${r.q.slice(0,28).replace(/</g,"&lt;")}</td>
+      <td class="r num">${money(r.claimed)}</td>
+      <td class="r num ${r.v24<r.claimed*0.01?'flag':''}">${money(r.v24)}</td>
+      <td class="r num flag">${money(r.uniq>0?r.claimed/r.uniq:0)}</td>
+      <td class="r num">${r.uniq||"?"}</td></tr>`).join("")+`</table>
+    <div class="note">Sorted by reported $ per unique trader. Real prediction-market users stake tens–hundreds of dollars, not hundreds of thousands — high values = synthetic headline volume.</div>`;
+  // reality flags (right panel)
+  const stale=rows.filter(r=>r.claimed>1e6&&r.v24<r.claimed*0.01);
+  const silent=rows.filter(r=>r.claimed>1e6&&(r.soc+r.com)===0);
+  const pts=rows.filter(r=>r.tc>0).map(r=>r.claimed/r.tc).sort((a,b)=>a-b);
+  const medPT=pts.length?pts[Math.floor(pts.length/2)]:0;
+  fd.innerHTML=`<table>
+    <tr><td>Markets reporting &gt;$1M but ~$0 in the last 24h</td><td class="r"><b class="${stale.length?'flag':'ok'}">${stale.length} / ${rows.length}</b></td></tr>
+    <tr><td>Median reported $ per trade</td><td class="r"><b class="${medPT>1000?'flag':''}">${money(medPT)}</b></td></tr>
+    <tr><td>$1M+ markets with 0 comments &amp; 0 social mentions</td><td class="r"><b class="${silent.length?'flag':'ok'}">${silent.length} / ${rows.length}</b></td></tr>
+    <tr><td>Total reported vs last-24h volume</td><td class="r"><b>${money(totClaim)}</b> · <b class="ok">${money(tot24)}</b></td></tr>
+  </table>
+  <div class="note">A "social-native" market reporting millions in volume with zero comments, zero social mentions and near-zero 24h flow is reporting volume it isn't trading. These are the structural inflation tells — none of them visible in the native app.</div>`;
+}
+
+// ---- Consistency tab (multi-outcome arb radar) ----
+function outcomeProb(o){
+  for(const k of["probability","impliedChance","impliedProbability","currentProbability","currentImpliedChance","chance","prob","price","yesPrice"]){
+    let v=o&&o[k];if(v!==undefined&&v!==null&&v!==""){v=+v;if(isFinite(v)&&v>0){return v>1.5?v/100:v;}}}
+  return null;
+}
+function getOutcomes(det){
+  const o=det&&(det.outcomes||det.markets||det.options||det.choices);
+  return Array.isArray(o)?o:[];
+}
+let consRan=false;
+async function runConsistency(){
+  consRan=true;
+  const bn=document.getElementById("consBanner"),tb=document.getElementById("consTable");tb.innerHTML="";
+  if(!M.length){bn.innerHTML='<div class="msg">No markets loaded.</div>';return}
+  const multi=M.filter(m=>prob(m)===0).slice(0,40);
+  if(!multi.length){bn.innerHTML='<div class="msg">No multi-outcome markets found in the active set right now.</div>';return}
+  const rows=[];let dbg=null;
+  for(let i=0;i<multi.length;i++){
+    const m=multi[i];
+    bn.innerHTML=`<div class="msg"><span class="spin"></span>Scanning multi-outcome markets… <b>${i+1}/${multi.length}</b><div class="prog"><i style="width:${Math.round((i+1)/multi.length*100)}%"></i></div></div>`;
+    const det=await fetchDetail(m.id);
+    const outs=getOutcomes(det);
+    if(!dbg){dbg={hasOutcomes:outs.length,sampleOutcomeKeys:outs[0]?Object.keys(outs[0]):null,sample:outs[0]||null};console.log("[consistency] outcomes shape:",dbg);}
+    if(outs.length<2)continue;
+    const ps=outs.map(outcomeProb).filter(v=>v!==null);
+    if(ps.length<2)continue;
+    const sum=ps.reduce((s,v)=>s+v,0);
+    rows.push({q:m.question||"",cat:m.category,n:outs.length,np:ps.length,sum});
+    await new Promise(r=>setTimeout(r,90));
+  }
+  if(!rows.length){bn.innerHTML=`<div class="msg">Couldn't read outcome-level probabilities (checked ${multi.length} multi-outcome markets).<br/>Outcome field names differ — see console "[consistency] outcomes shape" and I can map them.</div>`;return}
+  const avgDev=rows.reduce((s,r)=>s+Math.abs(r.sum-1),0)/rows.length;
+  const over=rows.filter(r=>r.sum>1.02).length,under=rows.filter(r=>r.sum<0.98).length;
+  bn.innerHTML=`
+    <div class="stats" style="margin:6px 0 4px">
+      <div class="stat"><div class="k">Markets scanned</div><div class="v">${rows.length}</div></div>
+      <div class="stat"><div class="k">Avg deviation from 100%</div><div class="v ${avgDev>0.05?'flag':'ok'}">${(avgDev*100).toFixed(2)}%</div></div>
+      <div class="stat"><div class="k">Overround (&gt;100%)</div><div class="v flag">${over}</div></div>
+      <div class="stat"><div class="k">Underround (&lt;100%)</div><div class="v ok">${under}</div></div>
+    </div>`;
+  const lb=[...rows].sort((a,b)=>Math.abs(b.sum-1)-Math.abs(a.sum-1));
+  tb.innerHTML=`<table><tr><th>Market</th><th class="r">Outcomes</th><th class="r">Σ prob</th><th class="r">Deviation</th><th>Signal</th></tr>`+
+    lb.map(r=>{const dev=r.sum-1;const sig=Math.abs(dev)<0.02?'<span class="ok">consistent</span>':dev>0?`<span class="flag">overround +${(dev*100).toFixed(0)}% (house edge)</span>`:`<span class="ok">underround ${(dev*100).toFixed(0)}% (arb if &gt;2%×${r.n})</span>`;
+      return `<tr><td>${chip(r.cat)} ${r.q.slice(0,40).replace(/</g,"&lt;")}</td>
+      <td class="r num">${r.n}${r.np<r.n?` <span style="color:var(--muted)">(${r.np} priced)</span>`:""}</td>
+      <td class="r num ${Math.abs(dev)>0.05?(dev>0?'flag':'ok'):''}">${(r.sum*100).toFixed(1)}%</td>
+      <td class="r num">${dev>0?"+":""}${(dev*100).toFixed(1)}%</td>
+      <td>${sig}</td></tr>`}).join("")+`</table>
+    <div class="note">Underround "arb" is only real money if the gap exceeds 2% fee per leg × number of outcomes, plus slippage — on most markets it won't. Overround is the platform's structural edge: buying every outcome there loses by construction.</div>`;
+}
+
+// tabs
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
+  ["reality","insights","calib","consistency","markets"].forEach(n=>document.getElementById("t-"+n).style.display=n===t.dataset.t?"":"none");
+  if(t.dataset.t==="reality"&&!realRan)runReality();
+  if(t.dataset.t==="consistency"&&!consRan)runConsistency();
+});
+document.getElementById("runReal").onclick=runReality;
+document.getElementById("runCons").onclick=runConsistency;
+document.getElementById("reload").onclick=()=>{realRan=false;consRan=false;loadAll().then(()=>runReality())};
+document.getElementById("runCal").onclick=runCalibration;
+["search","cat","sort"].forEach(id=>document.getElementById(id).addEventListener("input",renderMarkets));
+loadAll().then(()=>runReality());
+</script>
+</body>
+</html>
