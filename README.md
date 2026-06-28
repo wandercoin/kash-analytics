@@ -9,8 +9,6 @@ app does not show yet.
 
 ## Pages
 
-- **⚡ Reality Check** — compares reported volume with real activity (unique traders,
-  24h volume, trades per market). A transparency / data-quality view.
 - **Insights** — volume and engagement by category, concentration, and the
   most-traded vs highest-volume markets side by side.
 - **Resolution Calibration** — once markets resolve, checks whether prices were

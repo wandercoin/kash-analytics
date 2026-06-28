@@ -9,23 +9,6 @@ Below is what each page does and why it is useful.
 
 ---
 
-## ⚡ Reality Check
-
-**What it does:** It compares the *reported* volume of each market with the real
-activity behind it. For every top market it looks at how many unique traders took
-part, how many trades happened, and how much was traded in the last 24 hours.
-
-**Why it matters:** A big "volume" number looks impressive, but it only means
-something if real people are really trading. This page makes that easy to check.
-For example, it shows the reported dollars *per trader* and *per trade*, and it
-flags markets that report millions in volume but had almost no activity in the
-last day, or have zero comments and zero social mentions.
-
-**In one line:** It shows how much of the headline volume is backed by real
-trading — a transparency and data-quality view.
-
----
-
 ## Insights
 
 **What it does:** It gives a "big picture" of the whole platform. It breaks volume

@@ -66,29 +66,14 @@
   </header>
 
   <div class="tabs">
-    <div class="tab on" data-t="reality">⚡ Reality Check</div>
-    <div class="tab" data-t="insights">Insights</div>
+    <div class="tab on" data-t="insights">Insights</div>
     <div class="tab" data-t="calib">Resolution Calibration</div>
     <div class="tab" data-t="consistency">🎯 Consistency</div>
     <div class="tab" data-t="markets">Markets</div>
   </div>
 
-  <!-- REALITY CHECK (flagship) -->
-  <section id="t-reality">
-    <div class="panel" style="border-color:#3a3a1f">
-      <h2 style="margin-top:0">Reported volume vs <span class="hi">real money</span> actually traded</h2>
-      <div id="realBanner"><div class="msg">Sampling each market's real on-chain USDC trades (in your browser)…</div></div>
-      <div class="note">Kash markets advertise a headline <code>totalVolume</code>. We cross-check it against the activity the same API reports — <code>uniqueTraders</code>, <code>tradeCount</code>, <code>volume24h</code>, <code>socialMentions</code>, <code>commentCount</code> — to expose volume that isn't backed by real trading. None of these ratios are shown in the native app.</div>
-    </div>
-    <div class="two" style="margin-top:13px">
-      <div class="panel"><h2 style="margin-top:0">Inflation leaderboard (sorted by $ per trader)</h2><div id="realTable"><div class="msg">…</div></div></div>
-      <div class="panel"><h2 style="margin-top:0">Reality flags</h2><div id="realFeed"><div class="msg">…</div></div></div>
-    </div>
-    <button class="btn" id="runReal" style="margin-top:14px">↻ Re-run reality check</button>
-  </section>
-
   <!-- INSIGHTS -->
-  <section id="t-insights" style="display:none">
+  <section id="t-insights">
     <div class="stats" id="stats"></div>
     <div class="two">
       <div class="panel"><h2 style="margin-top:0">Volume & engagement by category</h2><div id="catTable"></div></div>
@@ -133,7 +118,7 @@
   </section>
 
   <div class="foot">Community analytics · live data from the public Kash API (<code>app.kash.bot/api</code>) · not affiliated with Kash.<br/>
-    Unique vs the native app: <b>reported-vs-real-volume reality check</b>, engagement-quality, and resolution calibration — not just a market list.</div>
+    Unique vs the native app: cross-market engagement analytics, resolution calibration, and multi-outcome consistency — not just a market list.</div>
 </div>
 
 <script>
@@ -150,7 +135,6 @@ async function J(u){const r=await fetch(u,{headers:{accept:"application/json"}})
 
 async function loadAll(){
   document.getElementById("grid").innerHTML='<div class="msg">Loading…</div>';
-  const rb=document.getElementById("realBanner");if(rb)rb.innerHTML='<div class="msg"><span class="spin"></span>Loading markets from the Kash API…</div>';
   try{
     let all=[];for(let o=0;o<300;o+=100){const d=await J(`${API}/markets?status=active&sortBy=total_volume&sortOrder=desc&limit=100&offset=${o}`);
       const ms=(d&&d.markets)||[];all=all.concat(ms);if(!(d&&d.pagination&&d.pagination.hasMore))break;}
@@ -254,71 +238,9 @@ async function runCalibration(){
   }catch(e){el.innerHTML=`<div class="msg">Couldn't compute (${e.message}).</div>`}
 }
 
-// ---- Reality Check tab (flagship): real USDC traded vs reported volume ----
+// ---- shared detail fetch ----
 const fnum=x=>{const v=+x;return isFinite(v)?v:0};
-function tradeUsd(t){ // real USDC of one trade (6-decimal usdcIn/usdcOut), with fallbacks
-  const v=fnum(t.usdcIn)+fnum(t.usdcOut);
-  if(v>0)return v/1e6;
-  const a=fnum(t.usdc)||fnum(t.amountUsd)||fnum(t.value);
-  return a>1e4?a/1e6:a; // tolerate raw 6-dec or already-dollars
-}
-const money=v=>v>=1e6?"$"+(v/1e6).toFixed(2)+"M":v>=1e3?"$"+(v/1e3).toFixed(1)+"k":"$"+(+v).toFixed(0);
 async function fetchDetail(id){let det={};try{const d=await J(`${API}/markets/${id}?history=true`);det=(d&&d.market)||d||{};}catch(e){}return det;}
-let realRan=false;
-async function runReality(){
-  realRan=true;
-  const bn=document.getElementById("realBanner"),tb=document.getElementById("realTable"),fd=document.getElementById("realFeed");
-  tb.innerHTML='<div class="msg">…</div>';fd.innerHTML='<div class="msg">…</div>';
-  if(!M.length){bn.innerHTML='<div class="msg">No markets loaded.</div>';return}
-  const top=[...M].sort((a,b)=>num(b.totalVolume)-num(a.totalVolume)).slice(0,30);
-  const rows=[];
-  for(let i=0;i<top.length;i++){
-    const m=top[i];
-    bn.innerHTML=`<div class="msg"><span class="spin"></span>Sampling market activity… <b>${i+1}/${top.length}</b><div class="prog"><i style="width:${Math.round((i+1)/top.length*100)}%"></i></div></div>`;
-    const det=await fetchDetail(m.id);
-    rows.push({q:m.question||"",cat:m.category,
-      claimed:num(det.totalVolume??m.totalVolume)/100,
-      v24:num(det.volume24h)/100,
-      uniq:fnum(det.uniqueTraders||det.participantCount||0),
-      tc:fnum(det.tradeCount||m.tradeCount),
-      soc:fnum(det.socialMentions),com:fnum(det.commentCount)});
-    await new Promise(r=>setTimeout(r,90));
-  }
-  if(!rows.length){bn.innerHTML='<div class="msg">Couldn\'t read market details from the API right now.</div>';return}
-  const totClaim=rows.reduce((s,r)=>s+r.claimed,0),tot24=rows.reduce((s,r)=>s+r.v24,0),
-    totUniq=rows.reduce((s,r)=>s+r.uniq,0),totTc=rows.reduce((s,r)=>s+r.tc,0);
-  const perTrader=totUniq?totClaim/totUniq:0,perTrade=totTc?totClaim/totTc:0;
-  const worst=[...rows].filter(r=>r.uniq>0).sort((a,b)=>(b.claimed/b.uniq)-(a.claimed/a.uniq))[0];
-  bn.innerHTML=`
-    <div class="stats" style="margin:6px 0 4px">
-      <div class="stat"><div class="k">Reported volume (top 30)</div><div class="v">${money(totClaim)}</div></div>
-      <div class="stat"><div class="k">Volume last 24h</div><div class="v ${tot24<totClaim*0.01?'flag':'ok'}">${money(tot24)}</div></div>
-      <div class="stat"><div class="k">Reported $ / trader</div><div class="v flag">${money(perTrader)}</div></div>
-      <div class="stat"><div class="k">Reported $ / trade</div><div class="v flag">${money(perTrade)}</div></div>
-    </div>
-    ${worst?`<div class="note" style="margin-top:6px">Worst offender: <b>${worst.q.slice(0,64).replace(/</g,"&lt;")}</b> — reported <b class="flag">${money(worst.claimed)}</b> with only <b>${worst.uniq}</b> unique traders = <b class="flag">${money(worst.claimed/worst.uniq)}</b> per trader. Real retail doesn't trade six figures each.</div>`:""}`;
-  // leaderboard sorted by $/trader (most synthetic first)
-  const lb=[...rows].sort((a,b)=>(b.claimed/(b.uniq||1))-(a.claimed/(a.uniq||1)));
-  tb.innerHTML=`<table><tr><th>Market</th><th class="r">Reported</th><th class="r">24h</th><th class="r">$/trader</th><th class="r">Traders</th></tr>`+
-    lb.map(r=>`<tr><td>${chip(r.cat)} ${r.q.slice(0,28).replace(/</g,"&lt;")}</td>
-      <td class="r num">${money(r.claimed)}</td>
-      <td class="r num ${r.v24<r.claimed*0.01?'flag':''}">${money(r.v24)}</td>
-      <td class="r num flag">${money(r.uniq>0?r.claimed/r.uniq:0)}</td>
-      <td class="r num">${r.uniq||"?"}</td></tr>`).join("")+`</table>
-    <div class="note">Sorted by reported $ per unique trader. Real prediction-market users stake tens–hundreds of dollars, not hundreds of thousands — high values = synthetic headline volume.</div>`;
-  // reality flags (right panel)
-  const stale=rows.filter(r=>r.claimed>1e6&&r.v24<r.claimed*0.01);
-  const silent=rows.filter(r=>r.claimed>1e6&&(r.soc+r.com)===0);
-  const pts=rows.filter(r=>r.tc>0).map(r=>r.claimed/r.tc).sort((a,b)=>a-b);
-  const medPT=pts.length?pts[Math.floor(pts.length/2)]:0;
-  fd.innerHTML=`<table>
-    <tr><td>Markets reporting &gt;$1M but ~$0 in the last 24h</td><td class="r"><b class="${stale.length?'flag':'ok'}">${stale.length} / ${rows.length}</b></td></tr>
-    <tr><td>Median reported $ per trade</td><td class="r"><b class="${medPT>1000?'flag':''}">${money(medPT)}</b></td></tr>
-    <tr><td>$1M+ markets with 0 comments &amp; 0 social mentions</td><td class="r"><b class="${silent.length?'flag':'ok'}">${silent.length} / ${rows.length}</b></td></tr>
-    <tr><td>Total reported vs last-24h volume</td><td class="r"><b>${money(totClaim)}</b> · <b class="ok">${money(tot24)}</b></td></tr>
-  </table>
-  <div class="note">A "social-native" market reporting millions in volume with zero comments, zero social mentions and near-zero 24h flow is reporting volume it isn't trading. These are the structural inflation tells — none of them visible in the native app.</div>`;
-}
 
 // ---- Consistency tab (multi-outcome arb radar) ----
 function outcomeProb(o){
@@ -375,16 +297,14 @@ async function runConsistency(){
 // tabs
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
-  ["reality","insights","calib","consistency","markets"].forEach(n=>document.getElementById("t-"+n).style.display=n===t.dataset.t?"":"none");
-  if(t.dataset.t==="reality"&&!realRan)runReality();
+  ["insights","calib","consistency","markets"].forEach(n=>document.getElementById("t-"+n).style.display=n===t.dataset.t?"":"none");
   if(t.dataset.t==="consistency"&&!consRan)runConsistency();
 });
-document.getElementById("runReal").onclick=runReality;
 document.getElementById("runCons").onclick=runConsistency;
-document.getElementById("reload").onclick=()=>{realRan=false;consRan=false;loadAll().then(()=>runReality())};
+document.getElementById("reload").onclick=()=>{consRan=false;loadAll()};
 document.getElementById("runCal").onclick=runCalibration;
 ["search","cat","sort"].forEach(id=>document.getElementById(id).addEventListener("input",renderMarkets));
-loadAll().then(()=>runReality());
+loadAll();
 </script>
 </body>
 </html>
