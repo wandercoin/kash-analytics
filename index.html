@@ -66,14 +66,58 @@
   </header>
 
   <div class="tabs">
-    <div class="tab on" data-t="insights">Insights</div>
+    <div class="tab on" data-t="how">How it works</div>
+    <div class="tab" data-t="insights">Insights</div>
     <div class="tab" data-t="calib">Resolution Calibration</div>
     <div class="tab" data-t="consistency">🎯 Consistency</div>
     <div class="tab" data-t="markets">Markets</div>
   </div>
 
+  <!-- HOW IT WORKS -->
+  <section id="t-how">
+    <div class="panel">
+      <h2 style="margin-top:0">What is this?</h2>
+      <p style="margin:0;color:var(--txt);line-height:1.6">This is a free, independent dashboard that shows useful information about <b>Kash</b> — a
+      prediction market where people guess whether future events will happen (who wins a match, where a
+      crypto price lands, pop-culture questions, and so on). It reads only <b>public</b> data and runs
+      entirely in your browser. Nothing to install, no sign-up, no wallet. It only <b>reads</b> data — it
+      never places bets or changes anything. Not affiliated with Kash.</p>
+    </div>
+
+    <div class="panel" style="margin-top:13px">
+      <h2 style="margin-top:0">New to prediction markets?</h2>
+      <p style="margin:0;color:var(--txt);line-height:1.6">In a prediction market you buy <b>“Yes”</b> or
+      <b>“No”</b> on a question like <i>“Will Team X win?”</i>. The price runs from 0% to 100% and shows how
+      likely the crowd thinks the answer is “Yes”. A market at 70% means the crowd thinks there’s about a
+      70% chance. When the event finishes, the market <b>resolves</b> to Yes or No. This dashboard just helps
+      you understand those markets — it doesn’t ask you to bet.</p>
+    </div>
+
+    <div class="panel" style="margin-top:13px">
+      <h2 style="margin-top:0">The tabs, in plain words</h2>
+      <table>
+        <tr><td style="width:200px"><b>Insights</b></td><td>The big picture — which topics get the most money and attention, and which markets are the busiest.</td></tr>
+        <tr><td><b>Resolution Calibration</b></td><td>Checks whether Kash’s predictions actually come true. If markets priced at 70% really happen about 70% of the time, the pricing is accurate.</td></tr>
+        <tr><td><b>🎯 Consistency</b></td><td>A quick health check: for a question with many answers, do all the chances add up to 100%? They should — and here they do.</td></tr>
+        <tr><td><b>Markets</b></td><td>A searchable list of every live market. Click any card to open that market on Kash.</td></tr>
+      </table>
+    </div>
+
+    <div class="panel" style="margin-top:13px">
+      <h2 style="margin-top:0">How to use it</h2>
+      <ol style="margin:0;padding-left:20px;color:var(--txt);line-height:1.7">
+        <li>Click the <b>tabs</b> at the top to switch between views.</li>
+        <li>Some tabs (<b>Calibration</b>, <b>Consistency</b>) run a calculation when you open them or press their button. A spinner shows the progress — just give it a few seconds.</li>
+        <li>Press <b>↻ Reload</b> (top right) any time to refresh with the latest data.</li>
+        <li>On <b>Markets</b>, type in the search box or use the filters to find a market, then click it to open on Kash.</li>
+        <li>On a slow connection the numbers may take a few seconds to appear — that’s normal.</li>
+      </ol>
+      <div class="note">All numbers come live from Kash’s public API (<code>app.kash.bot/api</code>). If a page looks empty, press Reload or wait a moment for the data to load.</div>
+    </div>
+  </section>
+
   <!-- INSIGHTS -->
-  <section id="t-insights">
+  <section id="t-insights" style="display:none">
     <div class="stats" id="stats"></div>
     <div class="two">
       <div class="panel"><h2 style="margin-top:0">Volume & engagement by category</h2><div id="catTable"></div></div>
@@ -297,7 +341,7 @@ async function runConsistency(){
 // tabs
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
-  ["insights","calib","consistency","markets"].forEach(n=>document.getElementById("t-"+n).style.display=n===t.dataset.t?"":"none");
+  ["how","insights","calib","consistency","markets"].forEach(n=>document.getElementById("t-"+n).style.display=n===t.dataset.t?"":"none");
   if(t.dataset.t==="consistency"&&!consRan)runConsistency();
 });
 document.getElementById("runCons").onclick=runConsistency;
